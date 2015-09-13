@@ -1,0 +1,9 @@
+{
+  "name": "likes",
+  "version": "0.0.1",
+  "dependencies": {
+    "gulp": "*",
+    "sync-request": "*",
+    "tumblr.js": "*"
+  }
+}
