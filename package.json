@@ -4,6 +4,10 @@
   "dependencies": {
     "gulp": "*",
     "sync-request": "*",
-    "tumblr.js": "*"
+    "tumblr.js": "*",
+    "sleep": "*",
+    "bluebird": "*",
+    "moment": "*",
+    "chalk": "*"
   }
 }
