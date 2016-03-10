@@ -34,7 +34,7 @@ var total_likes = "unknown";
 var downloaded = 0;
 var remaining = true;
 var likes = [];
-var chunksize = 3;
+var chunksize = 20;
 var opts = {"limit": chunksize};
 // var offset = 0;
 
@@ -76,7 +76,7 @@ module.exports = {
         client.likes(opts, function (err, data) {
           if(err !== null) console.log(chalk.red(err));
 
-          if((data.liked_posts.length > 0) && (downloaded < 100)){
+          if((data.liked_posts.length > 0) && (downloaded < 1200)){ // TODO need to iterate after 1000 records?
 
             for (var i = 0; i < data.liked_posts.length; i++) {
               likes.push(data.liked_posts[i]);
@@ -118,75 +118,66 @@ module.exports = {
     // this will run after completion of the promiseWhile Promise
       // logObjArray(likes, "liked_timestamp");
       console.log(chalk.green("  finished downloading metadata..."));
+      downloaded = 0;
+      downLikes();
     });
-  }
+  },
 };
 
 
+var downLikes = function(){
+  promiseWhile(function(){
+    // console.log("(" + chalk.gray(downloaded + "/" + total_likes) + ") ~" + moment.duration((wait[1]-wait[0])/2 * (total_likes - downloaded), "seconds").humanize() + " left");
+    return downloaded <= likes.length; // finished when false
+  }, function() {
+    return new Promise(function(resolve, reject) {
+      var logline = "";
 
-  //   }).then(function() {
-  //     // this will run after completion of the promiseWhile Promise
-  //     likes.sort(function(a,b){
-  //       a.liked_timestamp - b.liked_timestamp;
-  //     });
-  //   });
-  // },
-  // downLikes: function(){
-  //   promiseWhile(function(){
-  //     console.log(chalk.blue("downloading and saving the photos..."));
-  //     // console.log("(" + chalk.gray(downloaded + "/" + total_likes) + ") ~" + moment.duration((wait[1]-wait[0])/2 * (total_likes - downloaded), "seconds").humanize() + " left");
-  //     return downloaded <= likes.length; // finished when false
-  //   }, function() {
-  //     return new Promise(function(resolve, reject) {
-  //       var logline = "";
-  //
-  //       for (var i = 0; i < likes.length; i++) {
-  //         var element = likes[i];
-  //
-  //         if(element.photos !== undefined && element.photos.length !== 0) {
-  //           var photos = element.photos;
-  //           var response, file;
-  //           for (var j = 0; j < photos.length; j++) {
-  //             var photo = photos[j];
-  //             file = "media/" + path.basename(url.parse(photo.original_size.url).pathname);
-  //             response = request('GET', photo.original_size.url);
-  //             fs.writeFileSync(file, response.body);
-  //             if(j=0) logline = "  " + file;
-  //           }
-  //         }
-  //
-  //         else if(element.video_url !== undefined) {
-  //           file = "media/" + path.basename(url.parse(element.video_url).pathname);
-  //           logline = "  " + file;
-  //           response = request('GET', element.video_url);
-  //           fs.writeFileSync(file, response.body);
-  //         }
-  //
-  //         else {
-  //           logline = "  can't process this type: " + element.type;
-  //           continue;
-  //         }
-  //
-  //         if(state.config.unlike_favorites) {
-  //           client.unlike(element.id, element.reblog_key, function (err, _data) {
-  //            if(err !== null) console.log(chalk.red(err));
-  //            console.log(chalk.red("  " + element.id + " unliked."));
-  //           });
-  //         }
-  //
-  //         downloaded++;
-  //
-  //         var zzz = Math.floor(Math.random()*(wait[1]-wait[0])*1000) + wait[0]*1000;
-  //         console.log(logline.concat('  (' + data.liked_posts.length + ")\t\tzzz " + zzz/1000 + "ms"));
-  //         sleep.usleep(zzz);
-  //       };
-  //       resolve();
-  //     });
-  //   }).then(function() {
-  //     console.log("all done.")
-  //   });
-  // }
-// };
+      for (var i = 0; i < likes.length; i++) {
+        var element = likes[i];
+        console.log(chalk.yellow("(" + downloaded + "/" + likes.length + ")") + chalk.blue("downloading " + element.short_url));
+
+        if(element.photos !== undefined && element.photos.length !== 0) {
+          var photos = element.photos;
+          var response, file;
+          for (var j = 0; j < photos.length; j++) {
+            var photo = photos[j];
+            file = "media/" + path.basename(url.parse(photo.original_size.url).pathname);
+            response = request('GET', photo.original_size.url);
+            console.log("    " + file);
+            fs.writeFileSync(file, response.body);
+          }
+        }
+
+        else if(element.video_url !== undefined) {
+          file = "media/" + path.basename(url.parse(element.video_url).pathname);
+          response = request('GET', element.video_url);
+          console.log("    " + file);
+          fs.writeFileSync(file, response.body);
+        }
+
+        else {
+          console.log("  can't process this type: " + element.type);
+          continue;
+        }
+
+        if(state.config.unlike_favorites) {
+          client.unlike(element.id, element.reblog_key, function (err, _data) {
+           if(err !== null) console.log(chalk.red(err));
+           console.log(chalk.red("  " + element.id + " unliked."));
+          });
+        }
+
+        downloaded++;
+        var zzz = Math.floor(Math.random()*(wait[1]-wait[0])*1000) + wait[0]*1000;
+        sleep.usleep(zzz);
+      };
+      resolve();
+    })
+  }).then(function() {
+    console.log("all done.")
+  });
+};
 
 
 
