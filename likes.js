@@ -5,7 +5,7 @@ var path = require("path");
 
 var request = require('sync-request');
 
-var secret = require('./secret'); 
+var secret = require('./secret');
 
 // Authenticate via OAuth
 var tumblr = require('tumblr.js');
@@ -18,7 +18,7 @@ var client = tumblr.createClient({
 
 module.exports = {
   getLikes: function() {
-    client.likes({ }, function (err, data) {
+    client.userLikes({ }, function (err, data) {
       console.log(" likes: " + data.liked_posts.length);
       for (var i = 0; i < data.liked_posts.length; i++) {
         var element = data.liked_posts[i];
@@ -29,14 +29,14 @@ module.exports = {
 
           for (var j = 0; j < photos.length; j++) {
             var photo = photos[j];
-            file = "media/" + path.basename(url.parse(photo.original_size.url).pathname);
+            file = secret.output_dir + path.basename(url.parse(photo.original_size.url).pathname);
             console.log("  " + file);
             response = request('GET', photo.original_size.url);
             fs.writeFileSync(file, response.body);
           }
         }
         else if(element.video_url !== undefined) {
-          file = "media/" + path.basename(url.parse(element.video_url).pathname);
+          file = secret.output_dir + path.basename(url.parse(element.video_url).pathname);
           console.log("  " + file);
           response = request('GET', element.video_url);
           fs.writeFileSync(file, response.body);
@@ -45,8 +45,8 @@ module.exports = {
           console.log("  can't process this type: " + element.type);
           continue;
         }
-        
-        client.unlike(element.id, element.reblog_key,function (err, _data) {
+
+        client.unlikePost(element.id, element.reblog_key,function (err, _data) {
           if (err !== null) console.log(err);
         });
       }

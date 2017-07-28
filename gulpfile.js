@@ -1,10 +1,7 @@
-var gulp = require('gulp');
-var likes = require('./likes');
+const gulp = require('gulp');
+const likes = require('./likes');
 
-gulp.task('default', ['likes'], function() {
-  //
-});
-
-gulp.task('likes', function() {
+gulp.task('default', function(done) {
   likes.getLikes();
-})
+  done();
+});
